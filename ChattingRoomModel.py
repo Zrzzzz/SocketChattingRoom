@@ -5,7 +5,8 @@ MessageType = Enum('MessageType', ('text', 'file', 'mp3'))
 # 客户端动作类别，用户可以登录、发送信息、退出
 ClientAction = Enum('Action', ('login', 'logout', 'sendMsg', 'getOnline'))
 # 服务端动作类别，返回在线用户、新信息等
-ServerAction = Enum('ServerAction', ('onlineUsers', 'newMessage', 'info'))
+ServerAction = Enum('ServerAction', ('loginSuccess', 'logoutSuccess',
+'onlineUsers', 'newMessage', 'info'))
 # 客户端状态
 ClientStatus = Enum('ClientStatus', ('offline', 'online'))
 
@@ -37,7 +38,7 @@ json:
 retMessageModel = {
     'status': 0,
     'msg': '',
-    'action': ServerAction.onlineUser
+    'action': ServerAction.onlineUsers,
     'data': {
         'msgs': [],
         'onlineUsers': []
@@ -45,15 +46,27 @@ retMessageModel = {
 }
 
 sendMessageModel = {
-    'action': Action.login,
+    'action': ClientAction.login,
     'user': '',
     'data': {
         'username': '',
         'time': 0,
-        'msgType': MessageType.text,
         'msg': ''
     }
 }
 
-if __name__ == '__main__':
-    print(Action.login)
+"""message格式为json
+Args:
+    from: str
+    to: str
+    time: Timestamp
+    type: MessageType
+    data: Bytes
+"""
+messageModel = {
+    'from': '',
+    'to': '',
+    'time': '',
+    'type': '',
+    'data': ''
+}

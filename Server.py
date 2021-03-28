@@ -1,23 +1,24 @@
 import socket
 import json
-import threading
 import select
-import logging
 import copy
-from './ChattingRoomModel' import *
+import logging
+import demjson
+from ChattingRoomModel import *
 
 
 def initEnvironment():
     """初始化环境变量
     """
-    global server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', 8000))
+    global server, epoll, userList, messageList
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(('', 8001))
     server.listen()
 
     # 创建一个epoll对象
-    global epoll = socket.epoll()
+    epoll = select.epoll()
     # 监听输入
-    epoll.register(socket.fileno(), select.EPOLLIN | select.EPOLLET)
+    epoll.register(server.fileno(), select.EPOLLIN | select.EPOLLET | select.EPOLLRDHUP | select.EPOLLERR)
 
     """
     维护一个用户列表
@@ -25,7 +26,7 @@ def initEnvironment():
         key: fd # socket.fileno()
         value: (socket, str) # the socket for username and username
     """
-    global userList = {}
+    userList = {}
     """
     message格式为json
     Args:
@@ -35,18 +36,21 @@ def initEnvironment():
         type: MessageType
         data: Bytes
     """
-    global messageList = []
+    messageList = []
 
 
-def createUser(sock, username = ''):
+def createUser(sock, username=''):
     """用于处理用户登入
 
     Args:
         sock (socket): 维护连接的套接字
         username (str): 用户id
     """
-    userList[sock.fileno()] = (sock, '')
-
+    # 注册用户
+    if userList.get(sock.fileno(), 0) == 0:
+        epoll.register(sock.fileno(), select.EPOLLIN | select.EPOLLET | select.EPOLLRDHUP | select.EPOLLERR)
+    userList[sock.fileno()] = (sock, username)
+    
 
 def deleteUser(fd):
     """用于处理用户主动登出或者客户端离线
@@ -63,7 +67,7 @@ def deleteUser(fd):
 
 def handleRequest(sock):
     """用于处理客户端请求
-    
+
     Args:
         sock (socket): 维护客户端连接的套接字
     """
@@ -71,7 +75,7 @@ def handleRequest(sock):
     recvMsg = sock.recv(1024)
     retMsg = copy.deepcopy(retMessageModel)
 
-    def sendMsgToSock(sock, status, msg, action, onlineUsers = [], msgs = []):
+    def sendMsgToSock(sock, status, msg, action, onlineUsers=[], msgs=[]):
         """对发送数据的封装
 
         TODO: 增加包头
@@ -93,9 +97,11 @@ def handleRequest(sock):
             }
         }
         sock.send(json.dumps(retMsg).encode())
+        logging.info('发送回复, %s', msg)
 
     try:
-        recvMsg = json.load(recvMsg.decode())
+        recvMsg = json.loads(recvMsg.decode())
+        logging.info('接收到新信息')
         _action = recvMsg['action']
         _user = recvMsg['user']
         _data = recvMsg['data']
@@ -104,28 +110,27 @@ def handleRequest(sock):
         if _action == ClientAction.login.name:
             createUser(sock, _user)
             # 处理返回信息
-            sendMsgToSock(sock, True, '登入成功', ServerAction.onlineUsers, onlineUsers=map(lambda x: x[1], userList.values())
+            sendMsgToSock(sock, True, '登入成功', ServerAction.loginSuccess, onlineUsers=list(map(lambda x: x[1], userList.values())))
         # 处理登出
         elif _action == ClientAction.logout.name:
             # 只要做离线处理即可
             deleteUser(sock.fileno())
             # 处理返回信息
-            sendMsgToSock(sock, True, '登出成功', ServerAction.info)
-
+            sendMsgToSock(sock, True, '登出成功', ServerAction.logoutSuccess)
         # 处理发送数据
         elif _action == ClientAction.sendMsg.name:
             _message = _data['msg']
             messageList.append(_message)
             # 发送信息
             for user in userList.values():
-                sendMsgToSock(sock, True, '新信息', ServerAction.newMessage)
+                sendMsgToSock(user[0], True, '新信息', ServerAction.newMessage, msgs=[_message])
 
         # 处理获取在线用户
         elif _action == ClientAction.getOnline.name:
             # TODO: 获取在线用户
             pass
-    except Exception err:
-        logging.error(err)
+    except Exception as err:
+        logging.error('信息处理失败 %s', err)
 
 
 def main():
@@ -138,6 +143,7 @@ def main():
             logging.info('本次未接收到事件')
             continue
         else:
+            logging.info('接收到事件')
             for fd, event in events:
                 # 对服务端的连接
                 if fd == server.fileno():
@@ -148,7 +154,7 @@ def main():
 
                 # 客户端输入
                 elif event & select.EPOLLIN:
-                    sock = userList.get(fd, 0)
+                    sock = userList.get(fd, (0,0))[0]
                     if sock == 0:
                         logging.error('用户查询失败')
                     else:
@@ -163,6 +169,6 @@ def main():
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     initEnvironment()
     main()
-
