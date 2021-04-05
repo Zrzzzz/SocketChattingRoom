@@ -7,7 +7,7 @@ def recordwav(t, fileurl):
     CHUNK = 1024  # 缓存大小
     FORMAT = pyaudio.paInt16  # 比特
     CHANNELS = 1  # 声道
-    RATE = 44100  # 采样率
+    RATE = 32000  # 采样率
     RECORD_SECONDS = t  # 录制时间
     WAVE_OUTPUT_FILENAME = fileurl  # 输出地址
 
@@ -67,5 +67,5 @@ def playwav(fileurl):
 
 
 if __name__ == '__main__':
-    recordwav(3, 'out.wav')
-    # playwav('out.wav')
+    # recordwav(3, 'out.wav')
+    playwav('UserData/Download/1617630448.wav')

@@ -99,18 +99,13 @@ def recvWithCache(sock, cache):
             g = match.groups()
             if g[0]:
                 h, m, c = g[:3]
-                v = cache.get(h, [])
-                if v:
-                    cache[h].append((c, m))
-                else:
-                    cache[h] = [(c, m)]
             else:
                 h, m, c = g[3:]
-                v = cache.get(h, [])
-                if v:
-                    cache[h].append((c, m))
-                else:
-                    cache[h] = [(c, m)]
+            v = cache.get(h, [])
+            if v:
+                cache[h].append((m, c))
+            else:
+                cache[h] = [(m, c)]
     def flat(dic):
         ret = []
         for v in dic.values():

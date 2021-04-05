@@ -7,6 +7,9 @@ from ChattingRoomModel import *
 
 
 class Server(object):
+    def __init__(self):
+        self.initEnvironment()
+
     def initEnvironment(self):
         """初始化环境变量
         """
@@ -171,5 +174,4 @@ class Server(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     server = Server()
-    server.initEnvironment()
     server.run()

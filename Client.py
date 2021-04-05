@@ -48,16 +48,21 @@ class Client(object):
                     os.makedirs(filePath)
                 url = os.path.join(filePath, msg['filename'])
                 with open(url, 'wb') as f:
-                    f.write(msg['data'])
+                    _data = msg['data']
+                    _data += '=' * (-len(_data) % 4)
+                    _data = base64.urlsafe_b64decode(_data.encode('utf8'))
+                    f.write(_data)
                     print("{} {}:\n发送了文件:{}, 存放至{}".format(msg['from'], self.__timestampToString(msg['time']), msg['filename'], url))
             elif _type == MessageType.mp3.name:
                 import os
-                filePath = 'UserData/Cache'
+                filePath = 'UserData/Download'
                 if not os.path.exists(filePath):
                     os.makedirs(filePath)
                 url = os.path.join(filePath, msg['filename'])
                 with open(url, 'wb') as f:
-                    _data = base64.b64decode(msg['data'].encode('ascii'))
+                    _data = msg['data']
+                    _data += '=' * (-len(_data) % 4)
+                    _data = base64.urlsafe_b64decode(_data.encode('utf8'))
                     f.write(_data)
                     print("{} {}:\n发送了语音:{}, 存放至{}".format(msg['from'], self.__timestampToString(msg['time']), msg['filename'], url))
                 playwav(url)
@@ -104,7 +109,7 @@ class Client(object):
                         if _action == ServerAction.info.name:
                             logging.info(retMsg['msg'])
                         elif _action == ServerAction.loginSuccess.name:
-                            logging.info('欢迎您 {}\n当前在线用户: {}'.format(user, _onlineUsers))
+                            logging.info('欢迎您 {}\n当前在线用户: {}'.format(self.user, _onlineUsers))
                         elif _action == ServerAction.logoutSuccess.name:
                             logging.info('已登出')
                             self.status = ClientStatus.offline
@@ -142,13 +147,16 @@ class Client(object):
             elif op == '2':
                 url = input('输入文件路径: ')
                 # 使用绝对路径来代替可能输入的相对路径
-                fileName = os.path.abspath(url).split('/')[-1]
+                url = os.path.abspath(url)
+                fileName = url.split('/')[-1]
+                print(fileName)
                 try:
                     with open(url, 'rb') as f:
                         fileData = f.read()
+                        fileData = base64.urlsafe_b64encode(fileData).decode('utf8')
                         self.sendMessage(ClientAction.sendMsg, self.makeMsg(MessageType.file, fileData, filename=fileName))
-                except Exception:
-                    print('文件读取错误')
+                except Exception as err:
+                    print('文件读取错误%s'%err)
             elif op == '3':
                 t = input('请输入语音时长')
                 try:
@@ -159,7 +167,7 @@ class Client(object):
                 print('*开始录音*')
                 if not os.path.exists('UserData/Cache'):
                     os.makedirs('UserData/Cache')
-                filename = str(time.time())
+                filename = str(time.time()).split('.')[0] + '.wav'
                 url = recordwav(t, os.path.join('UserData/Cache', filename))
                 print('*结束录音*')
                 fileName = url.split('/')[-1]
@@ -167,7 +175,7 @@ class Client(object):
                     with open(url, 'rb') as f:
                         fileData = f.read()
                         # 进行b64编码
-                        fileData = base64.b64encode(fileData).decode('ascii')
+                        fileData = base64.urlsafe_b64encode(fileData).decode('utf8')
                         self.sendMessage(ClientAction.sendMsg, self.makeMsg(MessageType.mp3, fileData, filename=fileName))
                 except Exception as err:
                     logging.error(err)
@@ -178,5 +186,4 @@ class Client(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     client = Client()
-    client.initEnvironment()
     client.run()
