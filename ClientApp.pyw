@@ -9,7 +9,7 @@ class ClientApp(wx.App):
     def OnInit(self):
         self.manager = UIManager.GuiManager(self.updateUI)
         self.client = ClientManager.Client()
-        self.frame = self.manager.GetFrame(1, self.client)
+        self.frame = self.manager.GetFrame(0, self.client)
         self.frame.Show()
         return True
 

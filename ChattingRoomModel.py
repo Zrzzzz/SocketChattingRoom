@@ -13,20 +13,7 @@ ServerAction = Enum('ServerAction', ('loginSuccess', 'logoutSuccess',
 # 客户端状态
 ClientStatus = Enum('ClientStatus', ('offline', 'online'))
 
-"""
-用户发送的信息格式如下
-Args:
-    action: ClientAction
-    user: str
-    data: json
-
-json:
-    username: str
-    time: Timestamp
-    type: MessageType
-    msg: data
-
-服务器返回的信息格式
+"""服务器返回的信息格式
 Args:
     status: int # 1 为 Ok 0 为 失败
     msg: str # 可以用来传输一些信息
@@ -37,7 +24,6 @@ json:
     msgs: [Message]
     onlineUsers: [str]
 """
-
 retMessageModel = {
     'status': 0,
     'msg': '',
@@ -48,6 +34,17 @@ retMessageModel = {
     }
 }
 
+"""用户发送的信息格式如下
+Args:
+    action: ClientAction
+    user: str
+    data: json
+
+json:
+    username: str
+    time: Timestamp
+    msg: data
+"""
 sendMessageModel = {
     'action': ClientAction.login,
     'user': '',

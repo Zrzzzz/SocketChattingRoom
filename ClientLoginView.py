@@ -54,5 +54,5 @@ class ClientLoginView(wx.Frame):
         username = self.userTF.GetValue()
 
         self.client.initEnvironment(serverAddr, int(port), username)
-
+        self.client.login()
         self.updater(1)

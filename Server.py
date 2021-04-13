@@ -111,6 +111,12 @@ class Server(object):
                 # 处理返回信息
                 users = list(filter(lambda x: x != '', map(lambda x: x[1], self.userList.values())))
                 sendMsgToSock(sock, True, '登入成功', ServerAction.loginSuccess, onlineUsers=users)
+                # 给其他人发送已登入
+                for user in self.userList.values():
+                    if user[1] != _user:
+                        msg = '%s加入了聊天室' % _user
+                        print(msg)
+                        sendMsgToSock(user[0], True, msg, ServerAction.info)
             # 处理登出
             elif _action == ClientAction.logout.name:
                 # 处理返回信息
@@ -123,7 +129,7 @@ class Server(object):
                 self.messageList.append(_message)
                 # 发送信息
                 for user in self.userList.values():
-                    if user[1] != _message['from']:
+                    if user[1] != _user:
                         sendMsgToSock(user[0], True, '新信息', ServerAction.newMessage, msgs=[_message])
 
             # 处理获取在线用户

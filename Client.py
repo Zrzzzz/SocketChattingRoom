@@ -25,13 +25,34 @@ class Client(object):
         self.user = username
         # 默认为下线状态
         self.status = ClientStatus.offline
-        # 进行登录
-        self.login()
+        # ui的回调函数
+        self.callback = None
 
     def __timestampToString(self, timestamp):
         t = time.localtime(timestamp)
         w = time.strftime("%Y-%m-%d %H:%M:%S", t)
         return w
+
+    def sendMessage(self, action, msg=None):
+        sendMsg = copy.deepcopy(sendMessageModel)
+        sendMsg['action'] = action.name
+        sendMsg['user'] = self.user
+        if msg:
+            sendMsg['data'] = {
+                'username': self.user,
+                'time': time.time(),
+                'msg': msg
+            }
+        # client.send(json.dumps(sendMsg).encode())
+        sendWithCache(self.client, json.dumps(sendMsg))
+
+    def login(self):
+        self.sendMessage(ClientAction.login)
+        self.status = ClientStatus.online
+
+    def logout(self):
+        self.sendMessage(ClientAction.logout)
+        self.status = ClientStatus.offline
 
     def handleMessage(self, msgs):
         import base64
@@ -66,29 +87,6 @@ class Client(object):
                     print("{} {}:\n发送了语音:{}, 存放至{}".format(msg['from'], self.__timestampToString(msg['time']), msg['filename'], url))
                 playwav(url)
 
-    def sendMessage(self, action, msg=None):
-        sendMsg = copy.deepcopy(sendMessageModel)
-        sendMsg['action'] = action.name
-        sendMsg['user'] = self.user
-        if msg:
-            sendMsg['data'] = {
-                'username': self.user,
-                'time': time.time(),
-                'msg': msg
-            }
-        # client.send(json.dumps(sendMsg).encode())
-        with open ('input.txt', 'w') as f1:
-            f1.write(json.dumps(sendMsg))
-        sendWithCache(self.client, json.dumps(sendMsg))
-
-    def login(self):
-        self.sendMessage(ClientAction.login)
-        self.status = ClientStatus.online
-
-    def logout(self):
-        self.sendMessage(ClientAction.logout)
-        self.status = ClientStatus.offline
-
     def handleReceive(self):
         while True:
             if self.status == ClientStatus.offline:
@@ -97,8 +95,6 @@ class Client(object):
                 try:
                     # retMsg = client.recv(1024)
                     retMsg = recvWithCache(self.client, dict())[0]
-                    with open ('output.txt', 'w') as f1:
-                        f1.write(retMsg)
                     retMsg = json.loads(retMsg)
                     # 对消息状态进行判断
                     if retMsg['status'] == 0:
@@ -110,7 +106,7 @@ class Client(object):
                         _onlineUsers = retMsg['data']['onlineUsers']
 
                         if _action == ServerAction.info.name:
-                            logging.info(retMsg['msg'])
+                            print(retMsg['msg'])
                         elif _action == ServerAction.loginSuccess.name:
                             logging.info('欢迎您 {}\n当前在线用户: {}'.format(self.user, _onlineUsers))
                         elif _action == ServerAction.logoutSuccess.name:
@@ -135,6 +131,7 @@ class Client(object):
         msg['filename'] = filename
         return msg
 
+    # cli上判断动作的函数
     def handleRequest(self):
         import os
         import base64
@@ -185,10 +182,32 @@ class Client(object):
             elif op == '4':
                 self.logout()
 
+    def setCallback(self, callback):
+        """用于UI界面的msg回调
+        Args:
+            callback: 回调函数
+        """
+        self.callback = callback
+
+    def runUI(self):
+        def handleReceiveUI():
+            while True:
+                if self.status == ClientStatus.offline:
+                    continue
+                else:
+                    try:
+                        # retMsg = client.recv(1024)
+                        retMsg = recvWithCache(self.client, dict())[0]
+                        retMsg = json.loads(retMsg)
+                        if self.callback:
+                            self.callback(retMsg)
+        self.recvThread = threading.Thread(target=handleReceiveUI)
+        self.recvThread.start()
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     client = Client()
     username = input('输入你的名称: ')
     client.initEnvironment('0.0.0.0', SOCKET_PORT, username)
+    client.login()
     client.run()

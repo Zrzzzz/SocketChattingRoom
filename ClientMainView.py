@@ -1,5 +1,12 @@
 import wx
-
+import socket
+import json
+import threading
+import copy
+import logging
+import time
+from ChattingRoomModel import *
+from AudioHelper import recordwav, playwav
 
 class ClientMainView(wx.Frame):
     def __init__(self, parent, id, updater, client):
@@ -83,3 +90,34 @@ class ClientMainView(wx.Frame):
 
     def sendVoiceEnd(self, evt):
         print("结束录音")
+
+    def handleReceive(self):
+        while True:
+            if self.status == ClientStatus.offline:
+                continue
+            else:
+                try:
+                    # retMsg = client.recv(1024)
+                    retMsg = recvWithCache(self.client, dict())[0]
+                    retMsg = json.loads(retMsg)
+                    # 对消息状态进行判断
+                    if retMsg['status'] == 0:
+                        logging.info('请求失败', retMsg['msg'])
+                    else:
+                        logging.info('请求成功')
+                        _action = retMsg['action']
+                        _msgs = retMsg['data']['msgs']
+                        _onlineUsers = retMsg['data']['onlineUsers']
+
+                        if _action == ServerAction.info.name:
+                            print(retMsg['msg'])
+                        elif _action == ServerAction.loginSuccess.name:
+                            logging.info('欢迎您 {}\n当前在线用户: {}'.format(self.user, _onlineUsers))
+                        elif _action == ServerAction.logoutSuccess.name:
+                            logging.info('已登出')
+                            self.status = ClientStatus.offline
+                            import os
+                            os._exit(0)
+                        elif _action == ServerAction.newMessage.name:
+                            logging.info('新信息')
+                            self.handleMessage(_msgs)
