@@ -7,9 +7,8 @@ import time
 from ChattingRoomModel import *
 from AudioHelper import recordwav, playwav
 
+
 class Client(object):
-    def __init__(self):
-        self.initEnvironment()
 
     def run(self):
         self.sendThread = threading.Thread(target=self.handleRequest)
@@ -17,13 +16,13 @@ class Client(object):
         self.sendThread.start()
         self.recvThread.start()
 
-    def initEnvironment(self):
+    def initEnvironment(self, addr, port, username):
         """初始化环境变量
         """
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client.connect(('0.0.0.0', SOCKET_PORT))
+        self.client.connect((addr, port))
 
-        self.user = input('输入你的名称: ')
+        self.user = username
         # 默认为下线状态
         self.status = ClientStatus.offline
         # 进行登录
@@ -43,14 +42,14 @@ class Client(object):
                     msg['time']), msg['data']))
             elif _type == MessageType.file.name:
                 import os
-                filePath = 'UserData/Cache'
+                filePath = 'UserData/Download'
                 if not os.path.exists(filePath):
                     os.makedirs(filePath)
                 url = os.path.join(filePath, msg['filename'])
                 with open(url, 'wb') as f:
                     _data = msg['data']
                     _data += '=' * (-len(_data) % 4)
-                    _data = base64.urlsafe_b64decode(_data.encode('utf8'))
+                    _data = base64.urlsafe_b64decode(_data.encode())
                     f.write(_data)
                     print("{} {}:\n发送了文件:{}, 存放至{}".format(msg['from'], self.__timestampToString(msg['time']), msg['filename'], url))
             elif _type == MessageType.mp3.name:
@@ -62,7 +61,7 @@ class Client(object):
                 with open(url, 'wb') as f:
                     _data = msg['data']
                     _data += '=' * (-len(_data) % 4)
-                    _data = base64.urlsafe_b64decode(_data.encode('utf8'))
+                    _data = base64.urlsafe_b64decode(_data.encode())
                     f.write(_data)
                     print("{} {}:\n发送了语音:{}, 存放至{}".format(msg['from'], self.__timestampToString(msg['time']), msg['filename'], url))
                 playwav(url)
@@ -78,6 +77,8 @@ class Client(object):
                 'msg': msg
             }
         # client.send(json.dumps(sendMsg).encode())
+        with open ('input.txt', 'w') as f1:
+            f1.write(json.dumps(sendMsg))
         sendWithCache(self.client, json.dumps(sendMsg))
 
     def login(self):
@@ -96,6 +97,8 @@ class Client(object):
                 try:
                     # retMsg = client.recv(1024)
                     retMsg = recvWithCache(self.client, dict())[0]
+                    with open ('output.txt', 'w') as f1:
+                        f1.write(retMsg)
                     retMsg = json.loads(retMsg)
                     # 对消息状态进行判断
                     if retMsg['status'] == 0:
@@ -153,7 +156,7 @@ class Client(object):
                 try:
                     with open(url, 'rb') as f:
                         fileData = f.read()
-                        fileData = base64.urlsafe_b64encode(fileData).decode('utf8')
+                        fileData = base64.urlsafe_b64encode(fileData).decode()
                         self.sendMessage(ClientAction.sendMsg, self.makeMsg(MessageType.file, fileData, filename=fileName))
                 except Exception as err:
                     print('文件读取错误%s'%err)
@@ -175,7 +178,7 @@ class Client(object):
                     with open(url, 'rb') as f:
                         fileData = f.read()
                         # 进行b64编码
-                        fileData = base64.urlsafe_b64encode(fileData).decode('utf8')
+                        fileData = base64.urlsafe_b64encode(fileData).decode()
                         self.sendMessage(ClientAction.sendMsg, self.makeMsg(MessageType.mp3, fileData, filename=fileName))
                 except Exception as err:
                     logging.error(err)
@@ -186,4 +189,6 @@ class Client(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     client = Client()
+    username = input('输入你的名称: ')
+    client.initEnvironment('0.0.0.0', SOCKET_PORT, username)
     client.run()

@@ -2,9 +2,10 @@ import wx
 
 
 class ClientMainView(wx.Frame):
-    def __init__(self, parent, id, updater):
+    def __init__(self, parent, id, updater, client):
         super().__init__(parent=parent, id=id, title="XI Client", size=(400, 400))
         self.updater = updater
+        self.client = client
         self.InitUI()
 
     def InitUI(self):
@@ -23,6 +24,21 @@ class ClientMainView(wx.Frame):
         interactView.Add(self.dialogView, 4, wx.EXPAND)
         interactView.Add(utilView, 1, wx.EXPAND)
         interactView.Add(self.inputView, 2, wx.EXPAND)
+
+        # 工具栏
+        filebm = wx.Bitmap("assets/file.png", wx.BITMAP_TYPE_PNG)
+        filebm = wx.ImageFromBitmap(filebm).Scale(20, 20, wx.IMAGE_QUALITY_HIGH)
+        filebm = wx.BitmapFromImage(filebm)
+        self.fileBtn = wx.BitmapButton(panel, bitmap=filebm, size=(40, 40))
+        self.fileBtn.Bind(wx.EVT_BUTTON, self.sendFile)
+        voicebm = wx.Bitmap("assets/voice.png", wx.BITMAP_TYPE_PNG)
+        voicebm = wx.ImageFromBitmap(voicebm).Scale(20, 20, wx.IMAGE_QUALITY_HIGH)
+        voicebm = wx.BitmapFromImage(voicebm)
+        self.voiceBtn = wx.BitmapButton(panel, bitmap=voicebm, size=(40, 40))
+        self.voiceBtn.Bind(wx.EVT_LEFT_DOWN, self.sendVoiceStart)
+        self.voiceBtn.Bind(wx.EVT_LEFT_UP, self.sendVoiceEnd)
+        utilView.Add(self.fileBtn)
+        utilView.Add(self.voiceBtn)        
 
         # 用户列表
         self.onlineUsers = ['zzx', 'zzzxz', 'adwda']
@@ -43,3 +59,27 @@ class ClientMainView(wx.Frame):
         s = self.inputView.GetValue()
         self.inputView.SetValue('')
         self.dialogView.AppendText(s + '\n')
+
+    def sendFile(self, evt):
+        import os
+        wildcard = 'All files(*.*)|*.*'
+        with wx.FileDialog(self,
+                           '选取文件',
+                           os.getcwd(),
+                           '',
+                           wildcard,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
+            fileUrl = ''
+            fileData = None
+            if dialog.ShowModal() == wx.ID_CANCEL:
+                return
+            fileUrl = dialog.GetPath()
+            with open(fileUrl, 'rb') as f:
+                fileData = f.read()
+            print(fileData.decode())
+
+    def sendVoiceStart(self, evt):
+        print("开始录音")
+
+    def sendVoiceEnd(self, evt):
+        print("结束录音")

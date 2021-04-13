@@ -2,7 +2,7 @@ from enum import Enum
 
 
 # SOCKET端口号
-SOCKET_PORT = 8001
+SOCKET_PORT = 8000
 # 信息类别，可以发送文本、文件和语音
 MessageType = Enum('MessageType', ('text', 'file', 'mp3'))
 # 客户端动作类别，用户可以登录、发送信息、退出
@@ -94,7 +94,7 @@ def recvWithCache(sock, cache):
     import re
 
     def decode(msg):
-        matches = re.finditer(r"XISOSTART(\d{6})(\d{3})([\s\S]*?)(?=XI)|XISOSTART(\d{6})(\d{3})([\s\S]*)", msg, re.MULTILINE)
+        matches = re.finditer(r"XISOSTART(\d{6})(\d{6})([\s\S]*?)(?=XI)|XISOSTART(\d{6})(\d{6})([\s\S]*)", msg, re.MULTILINE)
         for match in matches:
             g = match.groups()
             if g[0]:
@@ -109,6 +109,7 @@ def recvWithCache(sock, cache):
     def flat(dic):
         ret = []
         for v in dic.values():
+            print(len(v))
             s = sorted(v, key=lambda x: int(x[0]))
             t = ''
             for i in s:
@@ -142,7 +143,7 @@ def sendWithCache(sock, msg):
     """
     import math
     length = 1024
-    aLen = length - len('XISOSTART') - 9  # 减去首部长度
+    aLen = length - len('XISOSTART') - 12  # 减去首部长度
     msgArr = []
     if len(msg) > aLen:
         for i in range(math.ceil(len(msg) / aLen)):
@@ -151,4 +152,4 @@ def sendWithCache(sock, msg):
         msgArr.append(msg)
     h = str(int(hash(msg) % 1E6))
     for i, m in enumerate(msgArr):
-        sock.send('XISOSTART{0:0>6}{1:0>3}{2}'.format(h, i, m).encode())
+        sock.send('XISOSTART{0:0>6}{1:0>6}{2}'.format(h, i, m).encode())

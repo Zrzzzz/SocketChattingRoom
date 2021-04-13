@@ -2,10 +2,11 @@ import wx
 
 
 class ClientLoginView(wx.Frame):
-    def __init__(self, parent, id, updater):
+    def __init__(self, parent, id, updater, client):
         super(ClientLoginView, self).__init__(parent, id=id, title="登录", style=wx.DEFAULT_FRAME_STYLE^wx.MAXIMIZE_BOX, size=(400,150))
 
         self.updater = updater
+        self.client = client
         self.InitUI()
 
     def InitUI(self):
@@ -51,5 +52,7 @@ class ClientLoginView(wx.Frame):
         serverAddr = self.serverTF.GetValue()
         port = self.portTF.GetValue()
         username = self.userTF.GetValue()
+
+        self.client.initEnvironment(serverAddr, int(port), username)
 
         self.updater(1)

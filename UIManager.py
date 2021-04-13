@@ -8,17 +8,17 @@ class GuiManager():
         self.UpdateUI = UpdateUI
         self.frameDict = {}  # 用来装载已经创建的Frame对象
  
-    def GetFrame(self, type):
+    def GetFrame(self, type, client):
         frame = self.frameDict.get(type)
  
         if frame is None:
-            frame = self.CreateFrame(type)
+            frame = self.CreateFrame(type, client)
             self.frameDict[type] = frame
  
         return frame
  
-    def CreateFrame(self, type):
+    def CreateFrame(self, type, client):
         if type == 0:
-            return ClientLoginView(parent=None, id=type, updater=self.UpdateUI)
+            return ClientLoginView(parent=None, id=type, updater=self.UpdateUI, client=client)
         elif type == 1:
-            return ClientMainView(parent=None, id=type, updater=self.UpdateUI)
+            return ClientMainView(parent=None, id=type, updater=self.UpdateUI, client=client)
