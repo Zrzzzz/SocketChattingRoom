@@ -49,10 +49,20 @@ class ClientLoginView(wx.Frame):
         self.Center()
 
     def login(self, evt):
-        serverAddr = self.serverTF.GetValue()
-        port = self.portTF.GetValue()
-        username = self.userTF.GetValue()
+        # serverAddr = self.serverTF.GetValue()
+        # port = self.portTF.GetValue()
+        # username = self.userTF.GetValue()
 
-        self.client.initEnvironment(serverAddr, int(port), username)
+        # self.client.initEnvironment(serverAddr, int(port), username)
+        self.client.initEnvironment('0.0.0.0', 8000, 'zzx')
+
+        def messageCallback(msg):
+            if msg['status'] == 1:
+                # 停止接收，不然线程循环导致了UI无法更新
+                self.client.stopRecving()
+                self.updater(1)
+            else:
+                wx.MessageBox("登录失败", "错误", wx.OK | wx.ICON_INFORMATION)
+        self.client.setCallback(messageCallback)
         self.client.login()
-        self.updater(1)
+        self.client.startRecving()

@@ -4,6 +4,7 @@ import threading
 import copy
 import logging
 import time
+import wx
 from ChattingRoomModel import *
 from AudioHelper import recordwav, playwav
 
@@ -189,20 +190,25 @@ class Client(object):
         """
         self.callback = callback
 
-    def runUI(self):
+    def startRecving(self):
         def handleReceiveUI():
-            while True:
-                if self.status == ClientStatus.offline:
-                    continue
-                else:
+            while self.recving:
+                if self.status == ClientStatus.online:
                     try:
                         # retMsg = client.recv(1024)
                         retMsg = recvWithCache(self.client, dict())[0]
                         retMsg = json.loads(retMsg)
                         if self.callback:
                             self.callback(retMsg)
-        self.recvThread = threading.Thread(target=handleReceiveUI)
-        self.recvThread.start()
+                    except Exception:
+                        pass
+        self.recving = True
+        wx.CallAfter(handleReceiveUI)
+
+    def stopRecving(self):
+        self.recving = False
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
