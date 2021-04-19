@@ -115,12 +115,13 @@ class ClientMainView(wx.Frame):
                         f.write(_data)
                         wx.MessageDialog(self, '文件已保存', '提示')
                 except FileNotFoundError:
-                    wx.MessageDialog(self, '保存失败,无效的保存路径', '提示')   
+                    wx.MessageDialog(self, '保存失败,无效的保存路径', '提示')
 
     def sendVoiceStart(self, evt):
+        import os
         self.isrecoding = True
         if not os.path.exists('UserData/Cache'):
-                    os.makedirs('UserData/Cache')
+            os.makedirs('UserData/Cache')
         filename = str(time.time()).split('.')[0] + '.wav'
         url = recordwav(0, os.path.join('UserData/Cache', filename), self.isrecoding)
         fileName = url.split('/')[-1]
@@ -199,17 +200,6 @@ class ClientMainView(wx.Frame):
                                        "新文件", wx.YES_NO | wx.ICON_QUESTION) as dlg:
                     if dlg.ShowModal() == wx.ID_YES:
                         self.saveFile(msg['data'], msg['filename'])
-                # import os
-                # filePath = 'UserData/Download'
-                # if not os.path.exists(filePath):
-                #     os.makedirs(filePath)
-                # url = os.path.join(filePath, msg['filename'])
-                # with open(url, 'wb') as f:
-                #     _data = msg['data']
-                #     _data += '=' * (-len(_data) % 4)
-                #     _data = base64.urlsafe_b64decode(_data.encode())
-                #     f.write(_data)
-                #     print("{} {}:\n发送了文件:{}, 存放至{}".format(msg['from'], self.__timestampToString(msg['time']), msg['filename'], url))
             elif _type == MessageType.mp3.name:
                 import os
                 filePath = 'UserData/Download'

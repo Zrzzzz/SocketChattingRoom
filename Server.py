@@ -100,7 +100,7 @@ class Server(object):
             recvMsg = recvWithCache(sock, dict())[0]
             recvMsg = json.loads(recvMsg)
             logging.info('接收到新信息')
-            logging.info(recvMsg)
+            # logging.info(recvMsg)
             _action = recvMsg['action']
             _user = recvMsg['user']
             _data = recvMsg['data']

@@ -91,7 +91,7 @@ def recvWithCache(sock, cache):
     import re
 
     def decode(msg):
-        matches = re.finditer(r"XISOSTART(\d{6})(\d{6})([\s\S]*?)(?=XI)|XISOSTART(\d{6})(\d{6})([\s\S]*)", msg, re.MULTILINE)
+        matches = re.finditer(r"XISOSTART(\d{6})(\d{6})([\s\S]*?)(?=XISOSTART)|XISOSTART(\d{6})(\d{6})([\s\S]*)", msg, re.MULTILINE)
         for match in matches:
             g = match.groups()
             if g[0]:
@@ -125,13 +125,18 @@ def recvWithCache(sock, cache):
                 return
             decode(tmp)
         # 信息头部为XISOSTART和6位hash值与3位包序号组成
-        return flat(cache)
+        with open('output.txt', 'w') as f1:
+            f1.write(str(cache))
+        dd = flat(cache)
+        print(len(dd))
+        return dd
     except Exception as err:
         print(err)
         raise Exception("CAN'T find start identifier!")
 
 
 def sendWithCache(sock, msg):
+    print(len(msg))
     """自定义发送函数
 
     Args:
@@ -148,5 +153,9 @@ def sendWithCache(sock, msg):
     else:
         msgArr.append(msg)
     h = str(int(hash(msg) % 1E6))
+    arr = []
     for i, m in enumerate(msgArr):
         sock.send('XISOSTART{0:0>6}{1:0>6}{2}'.format(h, i, m).encode())
+        arr.append(('{0:0>6}'.format(i), m))
+    with open('input.txt', 'w') as f1:
+        f1.write(str(arr))

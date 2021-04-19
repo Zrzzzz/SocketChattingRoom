@@ -8,40 +8,43 @@ def recordwav(t, fileurl, isrecoding=None):
     CHUNK = 1024  # 缓存大小
     FORMAT = pyaudio.paInt16  # 比特
     CHANNELS = 1  # 声道
-    RATE = 44000  # 采样率
+    RATE = 32000  # 采样率
     RECORD_SECONDS = t  # 录制时间
     WAVE_OUTPUT_FILENAME = fileurl  # 输出地址
     # close 错误输出
     # os.close(sys.stderr.fileno())
-    p = pyaudio.PyAudio()
+    
+    try:
+        p = pyaudio.PyAudio()
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        output=False,
+                        frames_per_buffer=CHUNK)
 
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
+        frames = []
 
-    frames = []
+        if t == 0:
+            while isrecoding:
+                data = stream.read(CHUNK)
+                frames.append(data)
+        else:
+            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                data = stream.read(CHUNK)
+                frames.append(data)    
 
-    if t == 0:
-        while isrecoding:
-            data = stream.read(CHUNK)
-            frames.append(data)
-    else:
-        for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-            data = stream.read(CHUNK)
-            frames.append(data)    
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
 
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
-        wf.setnchannels(CHANNELS)
-        wf.setsampwidth(p.get_sample_size(FORMAT))
-        wf.setframerate(RATE)
-        wf.writeframes(b''.join(frames))
-
+        with wave.open(WAVE_OUTPUT_FILENAME, 'wb') as wf:
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))
+    except Exception as err:
+        print(err)
     # os.open(sys.stderr.fileno())
     return os.path.abspath(fileurl)
 
@@ -75,4 +78,4 @@ def playwav(fileurl):
 
 if __name__ == '__main__':
     recordwav(3, 'out.wav')
-    # playwav('UserData/Download/1617630448.wav')
+    # playwav('UserData/Cache/1617630820.wav')
