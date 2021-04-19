@@ -106,7 +106,6 @@ def recvWithCache(sock, cache):
     def flat(dic):
         ret = []
         for v in dic.values():
-            print(len(v))
             s = sorted(v, key=lambda x: int(x[0]))
             t = ''
             for i in s:
@@ -127,7 +126,8 @@ def recvWithCache(sock, cache):
             decode(tmp)
         # 信息头部为XISOSTART和6位hash值与3位包序号组成
         return flat(cache)
-    except Exception:
+    except Exception as err:
+        print(err)
         raise Exception("CAN'T find start identifier!")
 
 

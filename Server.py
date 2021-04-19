@@ -115,7 +115,6 @@ class Server(object):
                 for user in self.userList.values():
                     if user[1] != _user:
                         msg = '%s加入了聊天室' % _user
-                        print(msg)
                         sendMsgToSock(user[0], True, msg, ServerAction.info)
             # 处理登出
             elif _action == ClientAction.logout.name:
@@ -134,8 +133,8 @@ class Server(object):
 
             # 处理获取在线用户
             elif _action == ClientAction.getOnline.name:
-                # TODO: 获取在线用户
-                pass
+                users = list(filter(lambda x: x != '', map(lambda x: x[1], self.userList.values())))
+                sendMsgToSock(sock, True, '获取在线用户成功', ServerAction.info, onlineUsers=users)
         except SystemExit:
             # 可能直接退出客户端或者停止进程
             self.deleteUser(sock.fileno())

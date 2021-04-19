@@ -17,9 +17,9 @@ class ClientApp(wx.App):
         print('exit')
         return 0
 
-    def updateUI(self, order):
+    def updateUI(self, order, user=None):
         self.frame.Show(False)
-        self.frame = self.manager.GetFrame(order, self.client)
+        self.frame = self.manager.GetFrame(order, self.client, user)
         self.frame.Show()
 
 

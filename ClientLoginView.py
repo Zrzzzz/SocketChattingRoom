@@ -60,7 +60,8 @@ class ClientLoginView(wx.Frame):
             if msg['status'] == 1:
                 # 停止接收，不然线程循环导致了UI无法更新
                 self.client.stopRecving()
-                self.updater(1)
+                # self.updater(1, username)
+                self.updater(1, 'zzx')
             else:
                 wx.MessageBox("登录失败", "错误", wx.OK | wx.ICON_INFORMATION)
         self.client.setCallback(messageCallback)
